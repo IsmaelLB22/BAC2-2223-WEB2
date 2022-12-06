@@ -1,0 +1,89 @@
+{% extends "HELBManager/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Drag n Drop</title>
+
+	<link rel="stylesheet" href="{% static 'HELBManager/style.css' %}" />
+</head>
+
+
+<article class="media content-section">
+    <div class="media-body">
+        <div class="article-metadata">
+            <a class="mr-2" href="#">{{ object.author }}</a>
+            <small class="text-muted">{{ object.date_posted|date:"F d, Y" }}</small>
+            {% if object.author == user %}
+            <div>
+                <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{% url 'project-update' object.id %}">Update</a>
+                <a class="btn btn-danger btn-sm mt-1 mb-1" href="{% url 'project-delete' object.id %}">Delete</a>
+            </div>
+            {% endif %}
+        </div>
+        <h2 class="article-title"> {{ object.title }}</h2>
+        <p class="article-content">{{ object.content }}</p>
+    </div>
+</article>
+
+    <!-- todo -->
+    <article class="media content-section">
+        <div>
+            <h2>Project Manager {{ object.author }}</h2>
+             
+                  {% for member in object.members.all %}
+
+                      <h2>Collaborator {{ member }} </h2>
+
+                  {% endfor  %}
+
+
+           <!-- >
+            
+            -->
+
+
+        </div>
+    </article>
+
+
+<!-- > Source :
+            https://stackoverflow.com/questions/8317537/django-templates-split-string-to-array
+            https://stackoverflow.com/questions/42905647/get-the-first-element-in-the-for-loops-in-the-django-template
+
+
+
+            A utiliser : https://www.youtube.com/watch?v=fZgGc9XoZ6U
+            -->
+
+    <div class="todo-container">   
+        {% for status in object.get_status_as_list %}
+            
+            {% if forloop.first %}
+                <div class="status" id="no_status">
+                    <h1>{{ status }}</h1>
+                    {% if object.author == user %}
+                    <button id="add_btn" onclick="addElement()">+ Add Task</button>
+                    {% endif %} 
+                </div>                
+            {% else %} 
+                <div class="status">
+                    <h1>{{ status }}</h1>
+                </div>
+            {% endif %} 
+
+        {% endfor %}
+    </div>
+
+
+
+
+
+    <script src="{% static 'HELBManager/script.js' %}"></script>
+
+
+{% endblock content %}

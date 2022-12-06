@@ -1,0 +1,30 @@
+{% extends "HELBManager/base.html" %}
+
+{% block content %}
+    
+    {% for project in projects %}
+
+        {% for member in project.members.all %}
+
+            {% if user == member or user == project.author %}
+                <article class="media content-section">
+                    <div class="media-body">
+                        <div class="article-metadata">
+                            <a class="mr-2" href="#">{{ project.author }}</a>
+                            <small class="text-muted">{{ project.date_posted|date:"F d, Y" }}</small>
+                        </div>
+                        <h2><a class="article-title" href="{% url 'project-detail' project.id  %}">{{ project.title }}</a></h2>
+                        <p class="article-content">{{ project.content }}</p>
+                    </div>
+                </article>
+            {% endif %}
+
+
+        {% endfor  %}
+
+            
+    {% endfor %}
+
+
+
+{% endblock content %}
