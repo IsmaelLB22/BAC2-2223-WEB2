@@ -16,7 +16,7 @@
     {% if title %}
     <title>HELBManager - {{ title }}</title>
     {% else %}
-    <title>HELBManager - Home</title>
+    <title>HELBManager</title>
     {% endif %}
 
 </head>
@@ -40,7 +40,7 @@
                     <div class="navbar-nav">
                         {% if user.is_authenticated %}
                         <a class="nav-item nav-link" href="{% url 'project-create' %}">New Project</a>
-                        <a class="nav-item nav-link" href="{% url 'profile' %}">Profile</a>
+                        <a class="nav-item nav-link" href="{% url 'profile' %}"> {{ user }}'s Profile</a>
                         <a class="nav-item nav-link" href="{% url 'logout' %}">Logout</a>
                         {% else %}
                         <a class="nav-item nav-link" href="{% url 'login' %}">Login</a>

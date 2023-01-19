@@ -2,29 +2,59 @@
 
 {% block content %}
     
-    {% for project in projects %}
+    {% if not user.is_authenticated %}
+        
+        <h1>Welcome to HELBManager</h1>
 
-        {% for member in project.members.all %}
+        <p>If you want to manage your projects, you are in the right place. Register yourself and go ahead.</p></br>
 
-            {% if user == member or user == project.author %}
-                <article class="media content-section">
-                    <div class="media-body">
-                        <div class="article-metadata">
-                            <a class="mr-2" href="#">{{ project.author }}</a>
-                            <small class="text-muted">{{ project.date_posted|date:"F d, Y" }}</small>
+        <h2>Create Projects</h2>
+        <p>Creating projects in the easieast way, you can also update or remove them.</p></br>
+
+        <h2>Drag & Drop</h2>
+        <p>A drag & drop system is available so you can have a visual progress of your project.</p></br>
+
+
+
+    {% else %}
+                    
+          {% for project in projects %}
+
+                {% if user == project.author%}
+                    <article class="media content-section">
+                        <div class="media-body">
+                            <div class="article-metadata">
+                                <a class="mr-2" href="#">{{ project.author }}</a>
+                                <small class="text-muted">{{ project.date_posted|date:"F d, Y" }}</small>
+                            </div>
+                            <h2><a class="article-title" href="{% url 'project-detail' project.id  %}">{{ project.title }}</a></h2>
+                            <p class="article-content">{{ project.content }}</p>
                         </div>
-                        <h2><a class="article-title" href="{% url 'project-detail' project.id  %}">{{ project.title }}</a></h2>
-                        <p class="article-content">{{ project.content }}</p>
-                    </div>
-                </article>
-            {% endif %}
+                    </article>
+                {% endif %}
+
+            {% for member in project.members.all %}
+
+                {% if user == member %}
+                    <article class="media content-section">
+                        <div class="media-body">
+                            <div class="article-metadata">
+                                <a class="mr-2" href="#">{{ project.author }}</a>
+                                <small class="text-muted">{{ project.date_posted|date:"F d, Y" }}</small>
+                            </div>
+                            <h2><a class="article-title" href="{% url 'project-detail' project.id  %}">{{ project.title }}</a></h2>
+                            <p class="article-content">{{ project.content }}</p>
+                        </div>
+                    </article>
+                {% endif %}
+
+            {% endfor  %}
+
+                
+        {% endfor %}
 
 
-        {% endfor  %}
-
-            
-    {% endfor %}
-
+    {% endif %}
 
 
 {% endblock content %}

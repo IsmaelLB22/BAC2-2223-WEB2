@@ -1,26 +1,29 @@
-const todos = document.querySelectorAll(".todo");
+const tasks = document.querySelectorAll(".task");
 const all_status = document.querySelectorAll(".status");
-let draggableTodo = null;
+let draggableTask = null;
 
-todos.forEach((todo) => {
+tasks.forEach((todo) => {
   todo.addEventListener("dragstart", dragStart);
   todo.addEventListener("dragend", dragEnd);
 });
 
 function dragStart() {
-  draggableTodo = this;
+  draggableTask = this;
   setTimeout(() => {
     this.style.display = "none";
   }, 0);
   console.log("dragStart");
+
 }
 
 function dragEnd() {
-  draggableTodo = null;
+  draggableTask = null;
   setTimeout(() => {
     this.style.display = "block";
   }, 0);
   console.log("dragEnd");
+
+
 }
 
 all_status.forEach((status) => {
@@ -47,61 +50,40 @@ function dragLeave() {
 
 function dragDrop() {
   this.style.border = "none";
-  this.appendChild(draggableTodo);
+  this.appendChild(draggableTask);
   console.log("dropped");
+  // Au drop -> màj
+  updateTaskStatus(this.id);
+}
+
+function updateTaskStatus(status) {
+  // recup l'id du projet
+  const pk = document.getElementById("projectID").value
+  console.log("id = " + draggableTask.id + " status "+ status);
+  //données à envoyer
+  const taskId = draggableTask.id;
+  const newStatus = status;
+
+
+  // Methode fetch envoie de données en JSON
+  fetch(`/project/${pk}/task-update/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json; charset=UTF-8"
+    },
+    body: JSON.stringify({
+      taskId: taskId,
+      newStatus: newStatus,
+    }),
+    credentials: "same-origin"
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      console.log(data);
+      // Refresh pour afficher la notif
+      document.location.reload()
+    });
+
 }
 
 
-
-/* create task  */
-
-
-function addElement() {
-
-    var taskName = prompt("Please enter the task's name:", "User managment");
-
-    if(taskName != null || taskName != ""){
-
-        //Create the div & text
-        const todo_div = document.createElement("div");
-        const txt = document.createTextNode(taskName);
-
-        //Append text child
-        //Append to list & set it draggable
-        todo_div.appendChild(txt);
-        todo_div.classList.add("todo");
-        todo_div.setAttribute("draggable", "true");
-        todo_div.setAttribute("draggable", "true");
-
-        /* create span */
-        const span = document.createElement("span");
-        const span_txt = document.createTextNode("\u00D7");
-        span.classList.add("close");
-        span.appendChild(span_txt);
-
-        todo_div.appendChild(span);
-
-        no_status.appendChild(todo_div);
-
-        span.addEventListener("click", () => {
-            span.parentElement.style.display = "none";
-        });
-        //   console.log(todo_div);
-
-        todo_div.addEventListener("dragstart", dragStart);
-        todo_div.addEventListener("dragend", dragEnd);
-
-        document.getElementById("todo_input").value = "";
-        todo_form.classList.remove("active");
-        overlay.classList.remove("active");
-        
-    }
-}
-
-const close_btns = document.querySelectorAll(".close");
-
-close_btns.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    btn.parentElement.style.display = "none";
-  });
-});

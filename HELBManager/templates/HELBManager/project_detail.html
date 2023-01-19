@@ -1,89 +1,229 @@
 {% extends "HELBManager/base.html" %}
 {% load static %}
-
+{% load index %}
 {% block content %}
 
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta http-equiv="X-UA-Compatible" content="ie=edge">
-	<title>Drag n Drop</title>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>HELBManager - Project Detail</title>
+        <link rel="stylesheet" href="{% static 'HELBManager/style.css' %}"/>
+    </head>
 
-	<link rel="stylesheet" href="{% static 'HELBManager/style.css' %}" />
-</head>
 
-
-<article class="media content-section">
-    <div class="media-body">
-        <div class="article-metadata">
-            <a class="mr-2" href="#">{{ object.author }}</a>
-            <small class="text-muted">{{ object.date_posted|date:"F d, Y" }}</small>
-            {% if object.author == user %}
-            <div>
-                <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{% url 'project-update' object.id %}">Update</a>
-                <a class="btn btn-danger btn-sm mt-1 mb-1" href="{% url 'project-delete' object.id %}">Delete</a>
-            </div>
-            {% endif %}
-        </div>
-        <h2 class="article-title"> {{ object.title }}</h2>
-        <p class="article-content">{{ object.content }}</p>
-    </div>
-</article>
-
-    <!-- todo -->
     <article class="media content-section">
-        <div>
-            <h2>Project Manager {{ object.author }}</h2>
-             
-                  {% for member in object.members.all %}
+        <div class="media-body">
 
-                      <h2>Collaborator {{ member }} </h2>
-
-                  {% endfor  %}
-
-
-           <!-- >
-            
-            -->
-
-
+            <div class="article-metadata">
+                <a class="mr-2" href="#">{{ object.author }}</a>
+                <small class="text-muted">{{ object.date_posted|date:"F d, Y" }}</small>
+                <!-- Board CRUD buttons  -->
+                {% if object.author == user %}
+                    <div>
+                        <a class="btn btn-secondary btn-sm mt-1 mb-1"
+                           href="{% url 'project-update' object.id %}">Update</a>
+                        <a class="btn btn-danger btn-sm mt-1 mb-1"
+                           href="{% url 'project-delete' object.id %}">Delete</a>
+                    </div>
+                {% endif %}
+            </div>
+            <h2 class="article-title"> {{ object.title }}</h2>
+            <p class="article-content">{{ object.content }}</p>
+            <!-- Board Task ADDING  -->
+            {% if object.author == user %}
+                <h2 class="article-metadata"> Add task</h2>
+                <form action="{% url 'task-create' object.id %}" method="post">
+                    {% csrf_token %}
+                    <div>
+                        <input type="hidden" name="project_id" id="project_id" value="{{ object.id }}"/>
+                        <label for="task_title"> Title &nbsp</label>
+                        <input type="text" name="task_title" id="task_title"/>
+                        <label for="task_status"> Status &nbsp</label>
+                        <select name="task_status" id="task_status">
+                            {% for status in object.get_status_as_list %}
+                                <option value="{{ status }}"> {{ status }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="assigned_members"> Assign to : &nbsp</label>
+                        <select name="assigned_members" id="assigned_members">
+                            <option value="{{ object.author.id }}"> {{ object.author }}</option>
+                            {% for member in object.members.all %}
+                                <option value="{{ member.id }}"> {{ member }}</option>
+                            {% endfor %}
+                        </select>
+                        <input class="btn btn-secondary btn-sm mt-1 mb-1" type="submit" value="Submit">
+                    </div>
+                </form>
+                {% if object.tasks.all|length > 0 %}
+                    <h2 class="article-metadata"> Delete task</h2>
+                    <form action="{% url 'task-delete' object.id %}" method="post">
+                        {% csrf_token %}
+                        <div>
+                            <label for="task_list"> Task List &nbsp</label>
+                            <select name="task_to_delete" id="task_list">
+                                {% for task in object.tasks.all %}
+                                    <option value="{{ task.id }}"> {{ task }}</option>
+                                {% endfor %}
+                            </select>
+                            <input class="btn btn-danger btn-sm mt-1 mb-1" type="submit" value="Delete">
+                        </div>
+                    </form>
+                {% endif %}
+            {% endif %}
         </div>
     </article>
 
+    <!-- Board with Project Manager and Collaborator -->
+    <article class="media content-section">
+        <div>
+            <h2>Project Manager {{ object.author }}</h2>
+            {% for member in object.members.all %}
+                <h2 style="color: {{ colors|index:forloop.counter0 }}"> Collaborator {{ member }} </h2>
+            {% endfor %}
+        </div>
+    </article>
 
-<!-- > Source :
-            https://stackoverflow.com/questions/8317537/django-templates-split-string-to-array
-            https://stackoverflow.com/questions/42905647/get-the-first-element-in-the-for-loops-in-the-django-template
-
-
-
-            A utiliser : https://www.youtube.com/watch?v=fZgGc9XoZ6U
-            -->
-
-    <div class="todo-container">   
+    <!-- Board Drag&Drop -->
+    {% csrf_token %}
+    <h2> Task Management </h2>
+    <input type="hidden" value="{{ object.id }}" id="projectID">
+    <div class="todo-container">
         {% for status in object.get_status_as_list %}
-            
-            {% if forloop.first %}
-                <div class="status" id="no_status">
-                    <h1>{{ status }}</h1>
-                    {% if object.author == user %}
-                    <button id="add_btn" onclick="addElement()">+ Add Task</button>
-                    {% endif %} 
-                </div>                
-            {% else %} 
-                <div class="status">
-                    <h1>{{ status }}</h1>
-                </div>
-            {% endif %} 
-
+            <div class="status" id="{{ status }}">
+                <h1>{{ status }}</h1>
+                <!-- Browse tasks -->
+                {% for task in object.tasks.all %}
+                    <!-- Check Task's Status == Actual Status -->
+                    {% if status == task.status %}
+                        <!-- Browse Members -->
+                        {% for  member in object.members.all %}
+                            <!-- is Member assigned to task -->
+                            {% if task.assignedMember == member %}
+                                <!--  draggable -->
+                                {% if task.assignedMember == user or object.author == user %}
+                                    <div class="task nohigh"
+                                         style="background-color: {{ colors|index:forloop.counter0 }}"
+                                         draggable="true" id="{{ task.id }}"> {{ task.title }}</div>
+                                    <!-- not draggable -->
+                                {% else %}
+                                    <div class="task nohigh"
+                                         style="background-color: {{ colors|index:forloop.counter0 }}"
+                                         draggable="false" id="{{ task.id }}"> {{ task.title }}</div>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                        <!-- is author assigned to task -->
+                        {% if task.assignedMember == object.author %}
+                            <!-- draggable -->
+                            {% if user == object.author %}
+                                <div class="task nohigh" draggable="true" id="{{ task.id }}"> {{ task.title }}
+                                </div>
+                            <!-- not draggable -->
+                            {% else %}
+                                <div class="task nohigh" draggable="false"
+                                     id="{{ task.id }}"> {{ task.title }}  </div>
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </div>
         {% endfor %}
     </div>
 
 
-
-
-
     <script src="{% static 'HELBManager/script.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 
+
+
+     <!-- Board Task Chronology  -->
+    {% if object.author == user %}
+        <article class="media content-section">
+            <div class="media-body">
+
+                <div class="article-metadata">
+                    <h2 class="article-metadata">Task Chronology </h2>
+                    <div>
+                        <canvas id="myChart"></canvas>
+                    </div>
+                    <script>
+
+                        const ctx = document.getElementById('myChart');
+
+                        var taskList = [];
+                        var dateList = [];
+
+                        {% for task in object.tasks.all %}
+                            taskList.push("{{task}}");
+                            date = ['{{ task.get_creation_date }}', '{{ task.get_update_date }}'];
+                            dateList.push(date);
+                        {% endfor %}
+
+                        const data = {
+                            labels: taskList,
+                            datasets: [
+                                {
+                                    axis: 'y',
+                                    label: 'Gantt Chart',
+                                    data: dateList,
+                                    fill: false,
+                                    backgroundColor: [
+                                        'rgba(255, 99, 132, 0.2)',
+                                        'rgba(255, 159, 64, 0.2)',
+                                        'rgba(255, 205, 86, 0.2)',
+                                        'rgba(75, 192, 192, 0.2)',
+                                        'rgba(54, 162, 235, 0.2)',
+                                        'rgba(153, 102, 255, 0.2)',
+                                        'rgba(201, 203, 207, 0.2)'
+                                    ],
+                                    borderColor: [
+                                        'rgb(255, 99, 132)',
+                                        'rgb(255, 159, 64)',
+                                        'rgb(255, 205, 86)',
+                                        'rgb(75, 192, 192)',
+                                        'rgb(54, 162, 235)',
+                                        'rgb(153, 102, 255)',
+                                        'rgb(201, 203, 207)'
+                                    ],
+                                    borderWidth: 1
+                                }]
+                        };
+
+                        new Chart(ctx, {
+                            type: 'bar',
+                            data: data,
+                            options: {
+                                scales: {
+                                    x: {
+                                        type: 'time',
+                                        time: {
+                                            unit: 'day',
+                                            parser: 'dd.MM.yyyy'
+                                        },
+                                        min: '{{ object.get_date_posted }}'
+                                    },
+
+                                    y: {
+                                        beginAtZero: true,
+                                    }
+
+                                },
+                                indexAxis: 'y',
+                            }
+                        });
+
+                    </script>
+
+
+                </div>
+            </div>
+        </article>
+    {% endif %}
 
 {% endblock content %}
